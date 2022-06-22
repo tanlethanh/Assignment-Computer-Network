@@ -88,7 +88,10 @@ class Client:
     # TODO
         self.sendRtspRequest(self.TEARDOWN)
         self.master.destroy() # Close the gui window
-        os.remove(CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT) # Delete the cache image from video
+
+        # self.state != self.INIT and self.state != self.READY
+        if (os.path.exists(CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT)):
+            os.remove(CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT) # Delete the cache image from video
 
     def pauseMovie(self):
         """Pause button handler."""
@@ -108,6 +111,9 @@ class Client:
 
     def listenRtp(self):
         """Listen for RTP packets."""
+
+        # countFrame = 0
+
         while True:
             try:
                 print("listening")
@@ -122,8 +128,14 @@ class Client:
                     if currFrameNbr > self.frameNbr: # Discard the late packet
                         self.frameNbr = currFrameNbr
                         self.updateMovie(self.writeFrame(rtpPacket.getPayload()))
+                        # countFrame += 1
+                        # print(countFrame * 1.0 / currFrameNbr)
+
+
             except:
                 # Stop listening upon requesting PAUSE or TEARDOWN
+                # print("Stop listening upon requesting PAUSE or TEARDOWN")
+
                 if self.playEvent.isSet():
                     break
 
@@ -133,8 +145,10 @@ class Client:
                     self.rtpSocket.shutdown(socket.SHUT_RDWR)
                     self.rtpSocket.close()
                     break
+                
 
     def writeFrame(self, data):
+        # print("recieved")
         """Write the received frame to a temp image file. Return the image file."""
         cachename = CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT
         file = open(cachename, "wb")
